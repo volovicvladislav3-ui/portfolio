@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>archenovich. | Digital Architect</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700;900&display=swap" rel="stylesheet">
+  
+  <style>
+    /* Глобальный сброс визуальных откликов при тапе */
+    * {
+      -webkit-tap-highlight-color: transparent !important;
+      -webkit-focus-ring-color: transparent !important;
+      -webkit-touch-callout: none !important;
+      outline: none !important;
+    }
+
+    /* Кастомный скроллбар */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #030303; }
+    ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: #555; }
+
+    /* Halftone (Dot Grid) Эффект и фон */
+    .halftone-bg { background-color: #030303; }
+    
+    .canvas-mask {
+      -webkit-mask-image: radial-gradient(ellipse at top left, rgba(0,0,0,1) 0%, rgba(0,0,0,0.5) 40%, rgba(0,0,0,0) 80%);
+      mask-image: radial-gradient(ellipse at top left, rgba(0,0,0,1) 0%, rgba(0,0,0,0.5) 40%, rgba(0,0,0,0) 80%);
+    }
+
+    .corner-glow {
+      position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
+      background: radial-gradient(circle at 0% 0%, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 30%, transparent 60%);
+      pointer-events: none;
+    }
+
+    /* Анимации появления (Reveal) */
+    .reveal {
+      opacity: 0;
+      transform: translateY(40px);
+      transition: all 0.8s cubic-bezier(0.25, 1, 0.5, 1);
+    }
+    .reveal.active {
+      opacity: 1 !important;
+      transform: translateY(0) !important;
+    }
+    .delay-100 { transition-delay: 100ms; }
+    .delay-200 { transition-delay: 200ms; }
+    .delay-300 { transition-delay: 300ms; }
+    .delay-400 { transition-delay: 400ms; }
+
+    /* Плавное парение (Левитация) */
+    @keyframes float {
+      0% { transform: translateY(0px); filter: drop-shadow(0 5px 15px rgba(255,255,255,0.05)); }
+      50% { transform: translateY(-15px); filter: drop-shadow(0 25px 25px rgba(255,255,255,0.2)); }
+      100% { transform: translateY(0px); filter: drop-shadow(0 5px 15px rgba(255,255,255,0.05)); }
+    }
+    .animate-float {
+      animation: float 6s ease-in-out infinite;
+      will-change: transform, filter;
+    }
+
+    /* Свечение для бейджа */
+    @keyframes badgePulse {
+      0% { box-shadow: 0 0 10px rgba(255,255,255,0.02); }
+      50% { box-shadow: 0 0 25px rgba(255,255,255,0.1); }
+      100% { box-shadow: 0 0 10px rgba(255,255,255,0.02); }
+    }
+    .badge-glow { animation: badgePulse 3s infinite; }
+
+    /* Анимация мышки на главном экране */
+    @keyframes mouse-scroll {
+      0% { transform: translateY(0); opacity: 1; }
+      50% { transform: translateY(12px); opacity: 0; }
+      51% { transform: translateY(-5px); opacity: 0; }
+      100% { transform: translateY(0); opacity: 1; }
+    }
+    .animate-mouse-scroll { animation: mouse-scroll 2s infinite ease-in-out; }
+
+    /* Анимация импульса на таймлайне */
+    @keyframes timelinePulse {
+      0% { top: 0; opacity: 0; }
+      10% { opacity: 1; height: 25px; }
+      90% { opacity: 1; height: 25px; }
+      100% { top: 100%; opacity: 0; height: 5px; }
+    }
+
+    /* -- GLITCH ЭФФЕКТ ДЛЯ ЗАГОЛОВКА -- */
+    .glitch { position: relative; display: inline-block; cursor: default; }
+    .glitch::before, .glitch::after {
+      content: attr(data-text);
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      opacity: 0; pointer-events: none; background: none;
+      -webkit-text-fill-color: initial; z-index: -1;
+    }
+    .glitch::before { color: #4ade80; }
+    .glitch::after { color: #f43f5e; }
+    
+    .glitch-anim::before {
+      opacity: 1; animation: glitch-anim-1 0.4s infinite linear alternate-reverse;
+    }
+    .glitch-anim::after {
+      opacity: 1; animation: glitch-anim-2 0.4s infinite linear alternate-reverse;
+    }
+    
+    @keyframes glitch-anim-1 {
+      0% { clip-path: inset(20% 0 80% 0); transform: translate(-3px, 1px); }
+      20% { clip-path: inset(60% 0 10% 0); transform: translate(3px, -1px); }
+      40% { clip-path: inset(40% 0 50% 0); transform: translate(-3px, 2px); }
+      60% { clip-path: inset(80% 0 5% 0); transform: translate(3px, -2px); }
+      80% { clip-path: inset(10% 0 70% 0); transform: translate(-3px, 1px); }
+      100% { clip-path: inset(30% 0 50% 0); transform: translate(3px, -1px); }
+    }
+    @keyframes glitch-anim-2 {
+      0% { clip-path: inset(10% 0 60% 0); transform: translate(3px, -1px); }
+      20% { clip-path: inset(30% 0 20% 0); transform: translate(-3px, 2px); }
+      40% { clip-path: inset(70% 0 10% 0); transform: translate(3px, 1px); }
+      60% { clip-path: inset(20% 0 50% 0); transform: translate(-3px, -2px); }
+      80% { clip-path: inset(50% 0 30% 0); transform: translate(3px, 1px); }
+      100% { clip-path: inset(5% 0 80% 0); transform: translate(-3px, -1px); }
+    }
+
+    /* -- БЕГУЩАЯ СТРОКА -- */
+    .marquee-wrapper {
+      display: flex;
+      width: max-content;
+      animation: marquee-scroll 20s linear infinite;
+    }
+    .marquee-wrapper:hover {
+      animation-play-state: paused;
+    }
+    .marquee-content {
+      display: flex;
+      flex-shrink: 0;
+      align-items: center;
+    }
+    @keyframes marquee-scroll {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+    
+    .marquee-item {
+      font-size: 3rem;
+      line-height: 1;
+      font-weight: 900;
+      text-transform: uppercase;
+      margin: 0 2rem;
+      color: transparent;
+      -webkit-text-stroke: 1.5px rgba(255, 255, 255, 0.15);
+      transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+      cursor: crosshair;
+    }
+    @media (min-width: 768px) {
+      .marquee-item { font-size: 5rem; margin: 0 3rem; }
+    }
+    
+    .marquee-item:hover {
+      color: #fff;
+      -webkit-text-stroke: 1.5px #fff;
+      text-shadow: 0 0 30px rgba(255, 255, 255, 0.6);
+      transform: scale(1.1) skewX(-8deg);
+    }
+
+    /* Магнитные кнопки и Tilt-карточки */
+    .magnetic-btn { transition: all 0.2s cubic-bezier(0.25, 1, 0.5, 1); will-change: transform; cursor: pointer; }
+    .tilt-card { transition: transform 0.1s ease-out; transform-style: preserve-3d; will-change: transform; }
+
+    /* Оверлей выбора языка */
+    #lang-selector {
+      position: fixed; inset: 0; z-index: 9999998;
+      background: #030303; display: none; flex-direction: column; align-items: center; justify-content: center;
+      opacity: 0; transition: opacity 0.6s ease;
+    }
+
+    /* Preloader */
+    #preloader {
+      position: fixed; inset: 0; z-index: 9999999;
+      background: #030303; display: flex; flex-direction: column; justify-content: flex-end;
+      padding: 2rem; font-family: monospace; color: #4ade80; font-size: 12px;
+      opacity: 1; transition: opacity 0.8s ease-out;
+    }
+
+    /* Пасхалка: Терминал */
+    #easter-terminal {
+      position: fixed; inset: 0; z-index: 99999;
+      background: rgba(3, 3, 3, 0.95); backdrop-filter: blur(10px);
+      font-family: monospace; color: #4ade80; padding: 2rem;
+      display: none; flex-direction: column; opacity: 0; transition: opacity 0.3s;
+    }
+    #easter-terminal.active { display: flex; opacity: 1; }
+    .term-output { flex-grow: 1; overflow-y: auto; margin-bottom: 1rem; font-size: 14px; line-height: 1.5; }
+    .term-output p { margin: 0; }
+    .term-input-line { display: flex; gap: 0.5rem; align-items: center; }
+    .term-input { background: transparent; border: none; color: #4ade80; outline: none; flex-grow: 1; font-family: monospace; font-size: 16px; }
+
+    /* Архитектурный Drawer */
+    #drawer-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px);
+      z-index: 99998; opacity: 0; visibility: hidden; transition: all 0.4s ease;
+    }
+    #architecture-drawer {
+      position: fixed; top: 0; right: 0; height: 100vh; width: 100%; max-w: 500px;
+      background: #0a0a0a; border-left: 1px solid rgba(255,255,255,0.1);
+      z-index: 99999; transform: translateX(100%); transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+      padding: 2.5rem; overflow-y: auto;
+    }
+    .drawer-open #drawer-overlay { opacity: 1; visibility: visible; }
+    .drawer-open #architecture-drawer { transform: translateX(0); }
+  </style>
+</head>
+<body class="bg-[#030303] text-[#EAEAEA] font-['Outfit',sans-serif] selection:bg-[#FFFFFF] selection:text-[#000000] overflow-x-hidden">
+
+  <!-- 1. PRELOADER -->
+  <div id="preloader">
+    <div id="preloader-logs" class="space-y-1"></div>
+  </div>
+
+  <!-- 2. ЭКРАН ВЫБОРА ЯЗЫКА -->
+  <div id="lang-selector">
+    <h2 class="text-white text-2xl md:text-4xl font-black mb-12 tracking-widest uppercase text-center">
+      Select Language <br><span class="text-[#555] text-lg mt-2 block">Выберите язык</span>
+    </h2>
+    <div class="flex gap-6">
+      <button onclick="initSite('en')" class="magnetic-btn border border-white/20 text-white px-10 py-4 rounded-full font-bold hover:bg-white hover:text-black shadow-[0_0_20px_rgba(255,255,255,0.05)]">English</button>
+      <button onclick="initSite('ru')" class="magnetic-btn border border-white/20 text-white px-10 py-4 rounded-full font-bold hover:bg-white hover:text-black shadow-[0_0_20px_rgba(255,255,255,0.05)]">Русский</button>
+    </div>
+  </div>
+
+  <!-- DRAWER -->
+  <div id="drawer-overlay" onclick="closeDrawer()"></div>
+  <div id="architecture-drawer">
+    <div class="flex justify-between items-center mb-10">
+      <h3 class="text-xs font-bold tracking-widest uppercase text-[#555]" data-i18n="drawerTitle">System Architecture</h3>
+      <button onclick="closeDrawer()" class="text-white hover:text-red-500 font-black text-xl transition-colors">&times;</button>
+    </div>
+    <h2 id="drawer-project-title" class="text-4xl font-black text-white mb-4">Project Name</h2>
+    <div class="flex gap-2 mb-8 flex-wrap" id="drawer-tags"></div>
+    <div class="space-y-8">
+      <div>
+        <h4 class="text-sm font-bold text-white mb-2 border-b border-white/10 pb-2" data-i18n="drawerTaskTitle">Бизнес-задача</h4>
+        <p id="drawer-task" class="text-[#888] font-light text-sm leading-relaxed"></p>
+      </div>
+      <div>
+        <h4 class="text-sm font-bold text-white mb-2 border-b border-white/10 pb-2" data-i18n="drawerSolutionTitle">Архитектурное решение</h4>
+        <p id="drawer-solution" class="text-[#888] font-light text-sm leading-relaxed"></p>
+      </div>
+      <div class="bg-[#050505] border border-white/10 p-4 rounded-xl font-mono text-xs text-green-400">
+        > system.status: ONLINE<br>
+        > root@access: OK
+      </div>
+    </div>
+    <div class="mt-12">
+      <a id="drawer-link" href="#" target="_blank" class="block text-center bg-white text-black py-4 rounded-full font-bold hover:scale-[1.02] transition-transform" data-i18n="drawerLaunch">Launch Application</a>
+    </div>
+  </div>
+
+  <!-- ПАСХАЛКА -->
+  <div id="easter-terminal">
+    <div class="term-output" id="term-output">
+      <div style="color: #a855f7; font-weight: bold;">[ROOT ACCESS GRANTED]</div>
+      <div style="color: #fff">Welcome to the Evil core system. Type 'help' to see available commands.</div>
+    </div>
+    <div class="term-input-line">
+      <span style="color: #a855f7">guest@archenovich:~#</span>
+      <input type="text" id="term-input" class="term-input" autocomplete="off" spellcheck="false">
+    </div>
+  </div>
+
+  <!-- ФОН С ИНТЕРАКТИВНОЙ КАНВАС-СЕТКОЙ -->
+  <div class="fixed inset-0 z-[-2] halftone-bg pointer-events-none">
+    <canvas id="grid-canvas" class="fixed inset-0 z-[-2] pointer-events-none canvas-mask"></canvas>
+    <div class="corner-glow"></div>
+  </div>
+  <div class="fixed inset-0 z-[-1] opacity-[0.02] bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdHRoIGQ9Ik0gNjAgMCBMIDAgMCAwIDYwIiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMSIvPjwvcGF0dGVybj48L2RlZnM+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0idXJsKCNncmlkKSIvPjwvc3ZnPg==')] pointer-events-none"></div>
+
+  <!-- Навигация -->
+  <nav class="fixed top-0 w-full z-50 border-b border-[#FFFFFF]/[0.05] bg-[#030303]/50 backdrop-blur-xl">
+    <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+      <span class="font-black tracking-tight text-xl text-white">archenovich.</span>
+      <div class="flex items-center gap-6">
+        <button id="lang-toggle" onclick="toggleLang()" class="text-xs font-black tracking-widest text-[#888] hover:text-white transition-colors">EN</button>
+        <a href="#contacts" class="text-sm bg-white text-black px-6 py-2.5 rounded-full font-bold magnetic-btn inline-block" data-i18n="navContact">Связаться</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="relative w-full min-h-screen flex flex-col items-center justify-center px-6 pt-32 pb-40 z-10 max-w-7xl mx-auto reveal">
+    <div class="w-full flex flex-col items-center text-center relative z-10">
+      <div class="badge-glow inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#FFFFFF]/[0.03] border border-[#FFFFFF]/[0.08] mb-8">
+        <span class="relative flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#FFFFFF] opacity-50"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-[#FFFFFF]"></span></span>
+        <span class="text-xs font-bold tracking-widest uppercase text-[#A0A0A0]" data-i18n="heroAvailable">Доступен для работы</span>
+      </div>
+      
+      <h1 class="animate-float text-6xl md:text-[8rem] font-black tracking-tighter leading-[0.95] text-white cursor-default">
+        DIGITAL <br class="hidden md:block">
+        <span class="glitch text-transparent bg-clip-text bg-gradient-to-b from-white via-[#999999] to-[#333333]" data-text="ARCHITECT" id="glitch-title">ARCHITECT</span>
+      </h1>
+      
+      <p class="text-[#888888] text-lg md:text-2xl mt-8 max-w-3xl font-light leading-relaxed">
+        <span data-i18n="heroSubtitle">Разрабатываю автономные экосистемы: от высоконагруженных ботов и Mini Apps до e-commerce Web-решений</span><span class="text-white font-black animate-pulse">_</span>
+      </p>
+
+      <div class="grid grid-cols-3 gap-8 mt-16 text-left border-t border-white/10 pt-8 w-full max-w-2xl">
+        <div><div class="text-[10px] text-[#555] font-bold uppercase tracking-widest" data-i18n="statUptime">Аптайм</div><div id="stat-uptime" class="text-xl md:text-2xl font-black text-white">99.99%</div></div>
+        <div><div class="text-[10px] text-[#555] font-bold uppercase tracking-widest" data-i18n="statTasks">Выполнено задач</div><div id="stat-tasks" class="text-xl md:text-2xl font-black text-white">1248</div></div>
+        <div><div class="text-[10px] text-[#555] font-bold uppercase tracking-widest" data-i18n="statLatency">Задержка</div><div id="stat-latency" class="text-xl md:text-2xl font-black text-white">14ms</div></div>
+      </div>
+    </div>
+
+    <div class="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 opacity-60 z-10">
+      <div class="w-6 h-10 border-2 border-white/30 rounded-full relative flex justify-center p-1">
+        <div class="w-1 h-2 bg-white rounded-full animate-mouse-scroll"></div>
+      </div>
+      <span class="text-[9px] font-black tracking-[0.3em] uppercase text-white" data-i18n="scroll">Скролл</span>
+    </div>
+  </section>
+
+  <!-- БЕГУЩАЯ СТРОКА (Технологии) -->
+  <section class="py-12 border-y border-[#FFFFFF]/[0.05] bg-[#000000]/30 backdrop-blur-md z-10 relative overflow-hidden w-full reveal">
+    <div class="marquee-wrapper">
+      <div class="marquee-content">
+        <span class="marquee-item">JavaScript</span>
+        <span class="marquee-item">TypeScript</span>
+        <span class="marquee-item">React</span>
+        <span class="marquee-item">Next.js</span>
+        <span class="marquee-item">Python</span>
+        <span class="marquee-item">FastAPI</span>
+        <span class="marquee-item">TailwindCSS</span>
+      </div>
+      <div class="marquee-content" aria-hidden="true">
+        <span class="marquee-item">JavaScript</span>
+        <span class="marquee-item">TypeScript</span>
+        <span class="marquee-item">React</span>
+        <span class="marquee-item">Next.js</span>
+        <span class="marquee-item">Python</span>
+        <span class="marquee-item">FastAPI</span>
+        <span class="marquee-item">TailwindCSS</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Панель статуса системы -->
+  <section class="py-16 max-w-7xl mx-auto px-6 z-10 relative reveal">
+    <h3 class="text-xs font-bold text-[#555] uppercase tracking-widest mb-6" data-i18n="statusTitle">Статус систем</h3>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="bg-[#050505] p-4 rounded-xl border border-white/10 flex items-center justify-between shadow-lg">
+        <span class="font-bold text-white text-sm">Webcartel</span>
+        <span class="text-green-500 text-[10px] font-black flex items-center gap-1.5"><div class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>ONLINE</span>
+      </div>
+      <div class="bg-[#050505] p-4 rounded-xl border border-white/10 flex items-center justify-between shadow-lg">
+        <span class="font-bold text-white text-sm">EvilStore</span>
+        <span class="text-green-500 text-[10px] font-black flex items-center gap-1.5"><div class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>ONLINE</span>
+      </div>
+      <div class="bg-[#050505] p-4 rounded-xl border border-white/10 flex items-center justify-between shadow-lg">
+        <span class="font-bold text-white text-sm">Evil VPN</span>
+        <span class="text-green-500 text-[10px] font-black flex items-center gap-1.5"><div class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>ONLINE</span>
+      </div>
+      <div class="bg-[#050505] p-4 rounded-xl border border-white/10 flex items-center justify-between shadow-lg">
+        <span class="font-bold text-white text-sm">Donat.cool</span>
+        <span class="text-yellow-500 text-[10px] font-black flex items-center gap-1.5"><div class="w-1.5 h-1.5 bg-yellow-500 rounded-full animate-pulse"></div>MAINT</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Обо мне -->
+  <section id="about" class="py-12 md:py-20 z-10 relative max-w-7xl mx-auto px-6">
+    <div class="grid lg:grid-cols-2 gap-12">
+      <!-- Карточка профиля -->
+      <div class="reveal glass-panel rounded-[2rem] border border-[#FFFFFF]/[0.08] p-8 md:p-12 relative overflow-hidden group">
+        <div class="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+        <div class="relative w-32 h-32 md:w-40 md:h-40 rounded-full p-1.5 border border-[#FFFFFF]/[0.1] bg-[#000] mb-8 shadow-2xl">
+          <img src="avatar.jpg" alt="Profile" class="w-full h-full object-cover rounded-full grayscale opacity-80 hover:grayscale-0 hover:opacity-100 transition-all duration-700" onerror="this.onerror=null;this.src='https://ui-avatars.com/api/?name=A&background=111111&color=FFFFFF&size=512';">
+        </div>
+        <h2 class="text-4xl md:text-5xl font-black tracking-tight text-white mb-6">archenovich</h2>
+        <p class="text-[#888888] text-lg leading-relaxed mb-8 font-light" data-i18n="aboutDesc">Я создаю цифровые продукты, ориентированные на бизнес-результат. Мой код — это не просто фронтенд, это архитектура, способная выдерживать нагрузки и приносить прибыль.</p>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="p-4 rounded-xl bg-[#0A0A0A] border border-[#FFFFFF]/[0.05]"><div class="text-white font-bold">Frontend</div><div class="text-xs text-[#666] mt-1">React / Next.js</div></div>
+          <div class="p-4 rounded-xl bg-[#0A0A0A] border border-[#FFFFFF]/[0.05]"><div class="text-white font-bold">Backend</div><div class="text-xs text-[#666] mt-1">Python / FastAPI</div></div>
+          <div class="p-4 rounded-xl bg-[#0A0A0A] border border-[#FFFFFF]/[0.05]"><div class="text-white font-bold">Telegram</div><div class="text-xs text-[#666] mt-1">Aiogram / WebApps</div></div>
+          <div class="p-4 rounded-xl bg-[#0A0A0A] border border-[#FFFFFF]/[0.05]"><div class="text-white font-bold">DevOps</div><div class="text-xs text-[#666] mt-1">Docker / DBs</div></div>
+        </div>
+      </div>
+
+      <!-- Процесс работы -->
+      <div class="reveal delay-100 glass-panel rounded-[2rem] border border-[#FFFFFF]/[0.08] p-8 md:p-12 flex flex-col justify-center">
+        <h3 class="text-2xl font-black text-white mb-8" data-i18n="processTitle">Процесс работы</h3>
+        <div class="relative ml-4 space-y-8 pb-4">
+          <div class="absolute left-0 top-2 bottom-0 w-[1px] bg-white/10"></div>
+          <div class="absolute left-[-1.5px] top-0 w-[4px] bg-[#4ade80] rounded-full shadow-[0_0_10px_#4ade80] animate-[timelinePulse_3s_infinite]"></div>
+
+          <div class="relative pl-8 reveal delay-100 group cursor-default">
+            <div class="absolute -left-[8px] top-1.5 w-4 h-4 rounded-full bg-[#050505] border-2 border-[#FFFFFF] z-10 transition-all duration-300 group-hover:border-[#4ade80] group-hover:shadow-[0_0_15px_rgba(74,222,128,0.6)]"></div>
+            <h4 class="text-lg font-bold text-white mb-2 transition-colors group-hover:text-[#4ade80]" data-i18n="step1Title">Аналитика & Архитектура</h4>
+            <p class="text-[#888] text-sm leading-relaxed font-light" data-i18n="step1Desc">Проектирование базы данных и выбор стека.</p>
+          </div>
+          <div class="relative pl-8 reveal delay-200 group cursor-default">
+            <div class="absolute -left-[8px] top-1.5 w-4 h-4 rounded-full bg-[#050505] border-2 border-[#FFFFFF] z-10 transition-all duration-300 group-hover:border-[#4ade80] group-hover:shadow-[0_0_15px_rgba(74,222,128,0.6)]"></div>
+            <h4 class="text-lg font-bold text-white mb-2 transition-colors group-hover:text-[#4ade80]" data-i18n="step2Title">Дизайн & UI/UX</h4>
+            <p class="text-[#888] text-sm leading-relaxed font-light" data-i18n="step2Desc">Создание интуитивно понятных интерфейсов.</p>
+          </div>
+          <div class="relative pl-8 reveal delay-300 group cursor-default">
+            <div class="absolute -left-[8px] top-1.5 w-4 h-4 rounded-full bg-[#050505] border-2 border-[#FFFFFF] z-10 transition-all duration-300 group-hover:border-[#4ade80] group-hover:shadow-[0_0_15px_rgba(74,222,128,0.6)]"></div>
+            <h4 class="text-lg font-bold text-white mb-2 transition-colors group-hover:text-[#4ade80]" data-i18n="step3Title">Разработка & API</h4>
+            <p class="text-[#888] text-sm leading-relaxed font-light" data-i18n="step3Desc">Написание чистого кода (Frontend + Backend).</p>
+          </div>
+          <div class="relative pl-8 reveal delay-400 group cursor-default">
+            <div class="absolute -left-[8px] top-1.5 w-4 h-4 rounded-full bg-[#050505] border-2 border-[#FFFFFF] z-10 transition-all duration-300 group-hover:border-[#4ade80] group-hover:shadow-[0_0_15px_rgba(74,222,128,0.6)]"></div>
+            <h4 class="text-lg font-bold text-white mb-2 transition-colors group-hover:text-[#4ade80]" data-i18n="step4Title">Запуск & Поддержка</h4>
+            <p class="text-[#888] text-sm leading-relaxed font-light" data-i18n="step4Desc">Деплой на сервера и техническое сопровождение.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Проекты (С двумя кнопками) -->
+  <section id="projects" class="py-12 md:py-20 z-10 relative max-w-7xl mx-auto px-6">
+    <div class="reveal flex flex-col md:flex-row md:items-end justify-between gap-8 mb-16">
+      <h2 class="text-5xl md:text-7xl font-black tracking-tighter text-white" data-i18n="projectsTitle">Избранные работы<span class="text-[#555]">.</span></h2>
+    </div>
+    
+    <div class="flex flex-col gap-12" id="projects-container">
+      
+      <!-- 1. WEBCARTEL -->
+      <div class="project-card reveal tilt-card glass-panel rounded-[2rem] border border-[#FFFFFF]/[0.08] p-8 md:p-12 lg:p-16 flex flex-col lg:flex-row gap-12 items-center overflow-hidden relative group">
+        <div class="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+        <div class="absolute -bottom-10 -right-10 text-[15rem] font-black text-[#FFFFFF]/[0.02] leading-none pointer-events-none">SHOP</div>
+        <div class="flex-1 z-10">
+          <div class="inline-block px-3 py-1 bg-white text-black text-xs font-bold uppercase tracking-widest rounded-full mb-6" data-i18n="tagLive">Запущен</div>
+          <h3 class="text-4xl md:text-5xl font-black text-white mb-6">WEBCARTEL</h3>
+          <p class="text-[#888888] text-lg leading-relaxed mb-8 font-light" data-i18n="descWebcartel">Premium streetwear e-commerce платформа. Разработка каталога, корзины покупок (drawer) и интеграция с панелью управления.</p>
+          
+          <div class="flex flex-wrap gap-4">
+            <a href="https://webcarte1.com" target="_blank" class="magnetic-btn inline-flex items-center justify-center bg-white text-black px-8 py-4 rounded-full font-bold shadow-lg hover:scale-[1.02]" data-i18n="btnVisit">Открыть проект</a>
+            <button onclick="openDrawer('webcartel')" class="magnetic-btn inline-flex items-center justify-center border border-white/20 text-white px-8 py-4 rounded-full font-bold hover:bg-white/10" data-i18n="btnViewArch">Подробнее об архитектуре</button>
+          </div>
+        </div>
+        
+        <div class="w-full lg:w-[450px] h-[300px] bg-[#050505] rounded-xl border border-[#FFFFFF]/[0.1] group-hover:border-white/20 group-hover:shadow-[0_0_30px_rgba(255,255,255,0.05)] transition-all duration-500 flex flex-col overflow-hidden relative z-10">
+          <div class="h-8 bg-[#111111] border-b border-[#FFFFFF]/[0.1] flex items-center px-4 gap-2">
+            <div class="w-2.5 h-2.5 rounded-full bg-[#444]"></div><div class="w-2.5 h-2.5 rounded-full bg-[#444]"></div><div class="w-2.5 h-2.5 rounded-full bg-[#444]"></div><span class="ml-2 text-[10px] font-mono text-[#666]">sys@webcartel:~</span>
+          </div>
+          <div class="p-4 font-mono text-xs space-y-2 relative h-full text-gray-300">
+             <div class="absolute top-0 left-0 w-full h-[50%] bg-gradient-to-b from-transparent via-white/5 to-transparent animate-[scanline_3s_linear_infinite] pointer-events-none"></div>
+             <p class="text-gray-500">GET /api/v1/cart/items</p>
+             <p class="text-green-400">200 OK - 12ms</p>
+             <p class="mt-2 text-blue-400">Response Payload:</p>
+             <div class="pl-4">
+               <p>{</p>
+               <p class="pl-4">"status": <span class="text-green-400">"success"</span>,</p>
+               <p class="pl-4">"cart_id": <span class="text-yellow-400">"wc_9981x"</span>,</p>
+               <p class="pl-4">"items": [<span class="text-purple-400">"Oversized Hoodie"</span>],</p>
+               <p class="pl-4">"total": <span class="text-yellow-400">85.00</span></p>
+               <p>}</p>
+             </div>
+             <p class="animate-pulse font-bold text-lg leading-none mt-2">_</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. EVILSTORE -->
+      <div class="project-card reveal tilt-card glass-panel rounded-[2rem] border border-[#FFFFFF]/[0.08] p-8 md:p-12 lg:p-16 flex flex-col lg:flex-row-reverse gap-12 items-center overflow-hidden relative group">
+        <div class="absolute inset-0 bg-gradient-to-br from-[#8B5CF6]/[0.03] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+        <div class="absolute -bottom-10 -left-10 text-[15rem] font-black text-[#8B5CF6]/[0.02] leading-none pointer-events-none">GEMS</div>
+        <div class="flex-1 z-10">
+          <div class="inline-block px-3 py-1 bg-[#8B5CF6]/20 border border-[#8B5CF6]/30 text-[#C4B5FD] text-xs font-bold uppercase tracking-widest rounded-full mb-6" data-i18n="tagGame">Магазин</div>
+          <h3 class="text-4xl md:text-5xl font-black text-white mb-6">EvilStore</h3>
+          <p class="text-[#888888] text-lg leading-relaxed mb-8 font-light" data-i18n="descEvilstore">Магазин цифровых товаров (Supercell, Brawl Stars, Clash of Clans). Гладкий UI/UX, каталог товаров, корзина и интеграция оплат.</p>
+          
+          <div class="flex flex-wrap gap-4">
+            <a href="https://evilstorechik.ru" target="_blank" class="magnetic-btn inline-flex items-center justify-center bg-[#8B5CF6] text-white px-8 py-4 rounded-full font-bold shadow-[0_0_20px_rgba(139,92,246,0.3)] hover:scale-[1.02]" data-i18n="btnVisit">Открыть проект</a>
+            <button onclick="openDrawer('evilstore')" class="magnetic-btn inline-flex items-center justify-center border border-white/20 text-white px-8 py-4 rounded-full font-bold hover:bg-white/10" data-i18n="btnViewArch">Подробнее об архитектуре</button>
+          </div>
+        </div>
+        
+        <div class="w-full lg:w-[450px] h-[300px] bg-[#050505] rounded-xl border border-[#FFFFFF]/[0.1] group-hover:border-purple-500/30 group-hover:shadow-[0_0_30px_rgba(168,85,247,0.1)] transition-all duration-500 flex flex-col overflow-hidden relative z-10">
+          <div class="h-8 bg-[#111111] border-b border-[#FFFFFF]/[0.1] flex items-center px-4 gap-2">
+            <div class="w-2.5 h-2.5 rounded-full bg-[#444]"></div><div class="w-2.5 h-2.5 rounded-full bg-[#444]"></div><div class="w-2.5 h-2.5 rounded-full bg-[#444]"></div><span class="ml-2 text-[10px] font-mono text-[#666]">root@evilstore:~</span>
+          </div>
+          <div class="p-4 font-mono text-xs space-y-2 relative h-full text-gray-300">
+             <div class="absolute top-0 left-0 w-full h-[50%] bg-gradient-to-b from-transparent via-purple-500/10 to-transparent animate-[scanline_3s_linear_infinite] pointer-events-none"></div>
+             <p class="text-gray-500">[INFO] Booting EvilStore Payment Gateway...</p>
+             <p class="text-purple-400">> Incoming connection from TG App</p>
+             <p class="text-gray-300 mt-2">Processing transaction <span class="text-yellow-400">#TXN-8841</span></p>
+             <p>Item: <span class="text-cyan-400">Brawl Pass Plus</span></p>
+             <p class="text-purple-400 mt-2">> Executing delivery sequence...</p>
+             <p class="text-green-400">[SUCCESS] Items delivered to account.</p>
+             <p class="animate-pulse font-bold text-lg leading-none mt-2">_</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. EVIL VPN -->
+      <div class="project-card reveal tilt-card glass-panel rounded-[2rem] border border-[#FFFFFF]/[0.08] p-8 md:p-12 lg:p-16 flex flex-col lg:flex-row gap-12 items-center overflow-hidden relative group">
+        <div class="absolute inset-0 bg-gradient-to-br from-green-500/[0.02] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+        <div class="absolute -bottom-10 -right-10 text-[15rem] font-black text-[#FFFFFF]/[0.02] leading-none pointer-events-none">VPN</div>
+        <div class="flex-1 z-10">
+          <div class="inline-block px-3 py-1 bg-[#222] border border-[#FFFFFF]/[0.1] text-white text-xs font-bold uppercase tracking-widest rounded-full mb-6" data-i18n="tagBot">Telegram Бот</div>
+          <h3 class="text-4xl md:text-5xl font-black text-white mb-6">EVIL VPN</h3>
+          <p class="text-[#888888] text-lg leading-relaxed mb-8 font-light" data-i18n="descEvilvpn">Автоматизированный сервис безопасного соединения на базе Telegram-бота. Разработана архитектура для мгновенной выдачи конфигураций и биллинга.</p>
+          
+          <div class="flex flex-wrap gap-4">
+            <a href="https://t.me/VPNEvilaBot" target="_blank" class="magnetic-btn inline-flex items-center justify-center bg-white text-black px-8 py-4 rounded-full font-bold shadow-lg hover:scale-[1.02]" data-i18n="btnVisit">Открыть проект</a>
+            <button onclick="openDrawer('evilvpn')" class="magnetic-btn inline-flex items-center justify-center border border-white/20 text-white px-8 py-4 rounded-full font-bold hover:bg-white/10" data-i18n="btnViewArch">Подробнее об архитектуре</button>
+          </div>
+        </div>
+        <div class="w-full lg:w-[450px] h-[300px] bg-[#050505] rounded-xl border border-[#FFFFFF]/[0.1] group-hover:border-green-500/30 group-hover:shadow-[0_0_30px_rgba(34,197,94,0.1)] transition-all duration-500 flex flex-col overflow-hidden relative z-10">
+          <div class="h-8 bg-[#111111] border-b border-[#FFFFFF]/[0.1] flex items-center px-4 gap-2">
+            <div class="w-2.5 h-2.5 rounded-full bg-[#444]"></div><div class="w-2.5 h-2.5 rounded-full bg-[#444]"></div><div class="w-2.5 h-2.5 rounded-full bg-[#444]"></div><span class="ml-2 text-[10px] font-mono text-[#666]">root@evil-vpn:~</span>
+          </div>
+          <div class="p-4 font-mono text-xs text-green-400/80 space-y-2 relative h-full">
+            <div class="absolute top-0 left-0 w-full h-[50%] bg-gradient-to-b from-transparent via-green-400/10 to-transparent animate-[scanline_3s_linear_infinite] pointer-events-none"></div>
+            <p class="opacity-50">Initializing core systems...</p>
+            <p>Loading configurations [OK]</p>
+            <p class="text-white mt-4">> User requested config</p>
+            <p class="text-blue-400">> Generating WireGuard keypair...</p>
+            <p class="text-purple-400">> Payment verified. Access granted.</p>
+            <p class="animate-pulse font-bold text-lg leading-none mt-2">_</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. DONAT.COOL -->
+      <div class="project-card reveal tilt-card glass-panel rounded-[2rem] border border-[#FFFFFF]/[0.08] p-8 md:p-12 lg:p-16 flex flex-col lg:flex-row-reverse gap-12 items-center overflow-hidden relative group">
+        <div class="absolute inset-0 bg-gradient-to-br from-blue-500/[0.03] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+        <div class="absolute -bottom-10 -left-10 text-[15rem] font-black text-[#FFFFFF]/[0.02] leading-none pointer-events-none">BOT</div>
+        <div class="flex-1 z-10">
+          <div class="inline-block px-3 py-1 bg-blue-500/20 border border-blue-500/30 text-blue-300 text-xs font-bold uppercase tracking-widest rounded-full mb-6" data-i18n="tagApp">Mini App</div>
+          <h3 class="text-4xl md:text-5xl font-black text-white mb-6">donat.cool</h3>
+          <p class="text-[#888888] text-lg leading-relaxed mb-8 font-light" data-i18n="descDonatcool">Платформа для покупки звезд Telegram и Premium. Лучшие цены на рынке, отсутствие комиссий на пополнение и моментальная автовыдача.</p>
+          
+          <div class="flex flex-wrap gap-4">
+            <a href="https://t.me/donat_cool_bot" target="_blank" class="magnetic-btn inline-flex items-center justify-center bg-blue-500 text-white px-8 py-4 rounded-full font-bold shadow-[0_0_20px_rgba(59,130,246,0.3)] hover:scale-[1.02]" data-i18n="btnVisit">Открыть проект</a>
+            <button onclick="openDrawer('donatcool')" class="magnetic-btn inline-flex items-center justify-center border border-white/20 text-white px-8 py-4 rounded-full font-bold hover:bg-white/10" data-i18n="btnViewArch">Подробнее об архитектуре</button>
+          </div>
+        </div>
+        <div class="w-full lg:w-[450px] h-[300px] bg-[#050505] rounded-xl border border-[#FFFFFF]/[0.1] group-hover:border-blue-500/30 group-hover:shadow-[0_0_30px_rgba(59,130,246,0.1)] transition-all duration-500 flex flex-col overflow-hidden relative z-10">
+          <div class="h-8 bg-[#111111] border-b border-[#FFFFFF]/[0.1] flex items-center px-4 gap-2">
+            <div class="w-2.5 h-2.5 rounded-full bg-[#444]"></div><div class="w-2.5 h-2.5 rounded-full bg-[#444]"></div><div class="w-2.5 h-2.5 rounded-full bg-[#444]"></div><span class="ml-2 text-[10px] font-mono text-[#666]">bot@donat.cool: ~/bot/main.py</span>
+          </div>
+          <div class="p-4 font-mono text-xs space-y-1 relative h-full text-gray-300">
+             <div class="absolute top-0 left-0 w-full h-[50%] bg-gradient-to-b from-transparent via-blue-500/10 to-transparent animate-[scanline_3s_linear_infinite] pointer-events-none"></div>
+             <p class="text-purple-400">@dp.message_handler<span class="text-gray-300">(commands=[</span><span class="text-green-400">'buy_stars'</span><span class="text-gray-300">])</span></p>
+             <p class="text-blue-400">async def <span class="text-yellow-400">process_stars</span><span class="text-gray-300">(msg: types.Message):</span></p>
+             <div class="pl-4">
+                 <p>user_id = msg.from_user.id</p>
+                 <p>amount = <span class="text-purple-400">1000</span></p>
+                 <p class="text-gray-500 mt-1"># Verify TON transaction</p>
+                 <p class="text-purple-400">if <span class="text-gray-300">await</span> payment.verify():</p>
+                 <div class="pl-4">
+                     <p><span class="text-gray-300">await</span> bot.send_stars(user_id, amount)</p>
+                     <p><span class="text-gray-300">await</span> msg.answer(<span class="text-green-400">"Звезды зачислены! ⭐️"</span>)</p>
+                 </div>
+             </div>
+             <p class="text-gray-500 mt-3">[LOG] Webhook active. Listening for events...</p>
+             <p class="animate-pulse mt-1 text-blue-400 font-bold text-lg leading-none">_</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <section id="contacts" class="py-24 border-t border-[#FFFFFF]/[0.05] relative overflow-hidden text-center z-10 reveal">
+    <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] bg-gradient-to-b from-[#FFFFFF]/[0.05] to-transparent blur-[120px] rounded-full pointer-events-none z-[-1]"></div>
+    <div class="reveal">
+      <h2 class="text-6xl md:text-8xl font-black tracking-tighter text-white mb-8" data-i18n="footerTitle">Создадим<br>что-то <span class="text-[#555]">Мощное.</span></h2>
+      <a href="https://t.me/archenovich" target="_blank" class="magnetic-btn inline-flex bg-white text-black px-12 py-5 rounded-full font-bold text-xl hover:shadow-[0_0_40px_rgba(255,255,255,0.2)]" data-i18n="footerBtn">Написать в Telegram</a>
+    </div>
+  </section>
+
+  <!-- Скрипты -->
+  <script>
+    // --- 1. КАНВАС: ИНТЕРАКТИВНАЯ СЕТКА ---
+    const canvas = document.getElementById('grid-canvas');
+    const ctx = canvas.getContext('2d');
+    let width, height, dots = [];
+    let mouse = { x: -1000, y: -1000 };
+    let interactionActive = false;
+
+    function initGrid() {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+      dots = [];
+      const spacing = window.innerWidth < 768 ? 25 : 20; 
+      for (let x = 0; x < width; x += spacing) {
+        for (let y = 0; y < height; y += spacing) {
+          dots.push({ x, y, baseX: x, baseY: y });
+        }
+      }
+    }
+
+    window.addEventListener('resize', initGrid);
+    window.addEventListener('mousemove', e => { 
+      if (interactionActive) { mouse.x = e.clientX; mouse.y = e.clientY; }
+    });
+    window.addEventListener('touchmove', e => { 
+      if (interactionActive) { mouse.x = e.touches[0].clientX; mouse.y = e.touches[0].clientY; }
+    });
+    window.addEventListener('mouseleave', () => { mouse.x = -1000; mouse.y = -1000; });
+    window.addEventListener('touchend', () => { mouse.x = -1000; mouse.y = -1000; });
+
+    initGrid();
+
+    function animateGrid() {
+      ctx.clearRect(0, 0, width, height);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+      for (let i = 0; i < dots.length; i++) {
+        let dot = dots[i];
+        
+        if (interactionActive) {
+          let dx = mouse.x - dot.x;
+          let dy = mouse.y - dot.y;
+          let dist = Math.sqrt(dx * dx + dy * dy);
+          
+          if (dist < 100) {
+            let force = (100 - dist) / 100;
+            dot.x -= (dx / dist) * force * 4;
+            dot.y -= (dy / dist) * force * 4;
+          } else {
+            dot.x += (dot.baseX - dot.x) * 0.1;
+            dot.y += (dot.baseY - dot.y) * 0.1;
+          }
+        } else {
+          dot.x = dot.baseX;
+          dot.y = dot.baseY;
+        }
+
+        ctx.beginPath();
+        ctx.arc(dot.x, dot.y, 1.2, 0, Math.PI * 2); 
+        ctx.fill();
+      }
+      requestAnimationFrame(animateGrid);
+    }
+    animateGrid();
+
+    // --- 2. ПОСЛЕДОВАТЕЛЬНЫЙ ЗАПУСК ЭКРАНОВ ---
+    function executeStartupSequence() {
+      const preloader = document.getElementById('preloader');
+      const logsContainer = document.getElementById('preloader-logs');
+      
+      const bootLogs = [
+        "[SYS] Initializing archenovich.core...",
+        "[SYS] Mounting root volumes...",
+        "[OK] Database connection established.",
+        "[OK] Securing network endpoints.",
+        "[SYS] Prompting for Language Configuration..."
+      ];
+      
+      let logIndex = 0;
+      const logInterval = setInterval(() => {
+        if (logIndex < bootLogs.length) {
+          const p = document.createElement('p');
+          p.innerText = bootLogs[logIndex];
+          logsContainer.appendChild(p);
+          logIndex++;
+        } else {
+          clearInterval(logInterval);
+          setTimeout(() => {
+            preloader.style.opacity = '0';
+            setTimeout(() => {
+              preloader.style.display = 'none';
+              showLanguageSelector();
+            }, 800);
+          }, 600);
+        }
+      }, 150);
+    }
+
+    function showLanguageSelector() {
+      const langSelector = document.getElementById('lang-selector');
+      langSelector.style.display = 'flex';
+      setTimeout(() => {
+        langSelector.style.opacity = '1';
+      }, 50);
+    }
+
+    function initSite(lang) {
+      currentLang = lang;
+      const langSelector = document.getElementById('lang-selector');
+      langSelector.style.opacity = '0';
+      
+      setTimeout(() => {
+        langSelector.style.display = 'none';
+        applyTranslation();
+        initReveal();
+        interactionActive = true;
+      }, 500); 
+    }
+
+    window.onload = executeStartupSequence;
+
+    // --- 3. GLITCH АНИМАЦИЯ ---
+    const glitchTitle = document.getElementById('glitch-title');
+    setInterval(() => {
+      glitchTitle.classList.add('glitch-anim');
+      setTimeout(() => glitchTitle.classList.remove('glitch-anim'), 400);
+    }, 5000);
+    glitchTitle.addEventListener('mouseenter', () => glitchTitle.classList.add('glitch-anim'));
+    glitchTitle.addEventListener('mouseleave', () => glitchTitle.classList.remove('glitch-anim'));
+
+    // --- 4. АНИМАЦИЯ ПОЯВЛЕНИЯ ПРИ СКРОЛЛЕ ---
+    const observerOptions = { root: null, rootMargin: '0px', threshold: 0.1 };
+    const observer = new IntersectionObserver((entries, observer) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('active');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, observerOptions);
+    
+    function initReveal() {
+      document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+    }
+
+    // --- СИСТЕМА ЛОКАЛИЗАЦИИ ---
+    const dict = {
+      ru: {
+        navContact: "Связаться",
+        heroAvailable: "Доступен для работы",
+        heroSubtitle: "Разрабатываю автономные экосистемы: от высоконагруженных ботов и Mini Apps до e-commerce Web-решений",
+        statUptime: "Аптайм", statTasks: "Выполнено задач", statLatency: "Задержка", scroll: "Скролл",
+        statusTitle: "Статус систем",
+        aboutDesc: "Я создаю цифровые продукты, ориентированные на бизнес-результат. Мой код — это не просто фронтенд, это архитектура, способная выдерживать нагрузки и приносить прибыль.",
+        processTitle: "Процесс работы",
+        step1Title: "Аналитика & Архитектура", step1Desc: "Проектирование базы данных и выбор стека.",
+        step2Title: "Дизайн & UI/UX", step2Desc: "Создание интуитивно понятных интерфейсов.",
+        step3Title: "Разработка & API", step3Desc: "Написание чистого кода (Frontend + Backend).",
+        step4Title: "Запуск & Поддержка", step4Desc: "Деплой на сервера и техническое сопровождение.",
+        projectsTitle: "Избранные работы<span class='text-[#555]'>.</span>",
+        tagLive: "Запущен", tagGame: "Магазин", tagBot: "Telegram Бот", tagApp: "Mini App",
+        descWebcartel: "Premium streetwear e-commerce платформа. Разработка каталога, корзины покупок (drawer) и интеграция с панелью управления.",
+        descEvilstore: "Магазин цифровых товаров (Supercell, Brawl Stars, Clash of Clans). Гладкий UI/UX, каталог товаров, корзина и интеграция оплат.",
+        descEvilvpn: "Автоматизированный сервис безопасного соединения на базе Telegram-бота. Разработана архитектура для мгновенной выдачи конфигураций и биллинга.",
+        descDonatcool: "Платформа для покупки звезд Telegram и Premium. Лучшие цены на рынке, отсутствие комиссий на пополнение и моментальная автовыдача.",
+        btnVisit: "Открыть проект",
+        btnViewArch: "Подробнее об архитектуре",
+        footerTitle: "Создадим<br>что-то <span class='text-[#555]'>Мощное.</span>",
+        footerBtn: "Написать в Telegram",
+        drawerTitle: "Архитектура Системы", drawerTaskTitle: "Бизнес-задача", drawerSolutionTitle: "Архитектурное решение", drawerLaunch: "Открыть приложение"
+      },
+      en: {
+        navContact: "Contact",
+        heroAvailable: "Available for work",
+        heroSubtitle: "Developing autonomous ecosystems: from high-load bots and Mini Apps to e-commerce Web solutions",
+        statUptime: "Uptime", statTasks: "Tasks Completed", statLatency: "Load Latency", scroll: "Scroll",
+        statusTitle: "System Status Overview",
+        aboutDesc: "I build digital products focused on business results. My code is not just frontend, it's an architecture capable of handling high loads and generating profit.",
+        processTitle: "Workflow",
+        step1Title: "Analytics & Architecture", step1Desc: "Database design and tech stack selection.",
+        step2Title: "Design & UI/UX", step2Desc: "Creating intuitive and clean interfaces.",
+        step3Title: "Development & API", step3Desc: "Writing clean code (Frontend + Backend).",
+        step4Title: "Launch & Support", step4Desc: "Server deployment and technical maintenance.",
+        projectsTitle: "Selected Works<span class='text-[#555]'>.</span>",
+        tagLive: "Live Project", tagGame: "Game Store", tagBot: "Telegram Bot", tagApp: "Mini App",
+        descWebcartel: "Premium streetwear e-commerce platform. Developed product catalog, drawer cart, and admin panel integration.",
+        descEvilstore: "Digital goods store (Supercell, Brawl Stars). Smooth UI/UX, catalog, cart, and payment integration.",
+        descEvilvpn: "Automated secure connection service based on a Telegram bot. Architected for instant config delivery and billing.",
+        descDonatcool: "Platform for buying Telegram Stars and Premium. Best market prices, zero deposit fees, and instant auto-delivery.",
+        btnVisit: "Open Project",
+        btnViewArch: "Architecture Details",
+        footerTitle: "Let's Build<br>Something <span class='text-[#555]'>Epic.</span>",
+        footerBtn: "Contact in Telegram",
+        drawerTitle: "System Architecture", drawerTaskTitle: "Business Task", drawerSolutionTitle: "Architectural Solution", drawerLaunch: "Launch Application"
+      }
+    };
+
+    const projectsData = {
+      webcartel: { title: "WEBCARTEL", tags: "React, Tailwind, API", link: "https://webcarte1.com",
+        ru: { task: "Создание масштабируемой платформы для продажи физических товаров премиум-сегмента.", solution: "Реализована архитектура Headless E-commerce с использованием React для фронтенда и кастомного API. Внедрена сложная корзина с сохранением сессии." },
+        en: { task: "Creating a scalable platform for selling premium physical goods.", solution: "Implemented Headless E-commerce architecture using React for frontend and a custom API. Integrated a complex cart with session storage." }
+      },
+      evilstore: { title: "EvilStore", tags: "React, Payment Gateway", link: "https://evilstorechik.ru",
+        ru: { task: "Создать высококонверсионный магазин цифровых товаров с моментальной выдачей.", solution: "Настроена интеграция с платежными шлюзами. Весь биллинг и доставка товара на аккаунт автоматизированы без участия оператора." },
+        en: { task: "Create a high-conversion digital goods store with instant delivery.", solution: "Integrated payment gateways. Billing and account delivery are fully automated without operator intervention." }
+      },
+      evilvpn: { title: "EVIL VPN", tags: "Python, Aiogram, WireGuard", link: "https://t.me/VPNEvilaBot",
+        ru: { task: "Полная автоматизация продажи и выдачи VPN-конфигураций через Telegram.", solution: "Связка Python-бота с сервером WireGuard. Динамическая генерация приватных ключей и привязка их к профилю пользователя в БД (PostgreSQL)." },
+        en: { task: "Full automation of selling and delivering VPN configs via Telegram.", solution: "Python bot linked with a WireGuard server. Dynamic generation of private keys linked to user profiles in PostgreSQL." }
+      },
+      donatcool: { title: "donat.cool", tags: "Python, Telegram API", link: "https://t.me/donat_cool_bot",
+        ru: { task: "Создание платформы для автоматической продажи Telegram Stars без комиссий.", solution: "Интеграция с TON API для отслеживания платежей. Бот автоматически зачисляет звезды сразу после подтверждения блока в сети." },
+        en: { task: "Creating a platform for automatic, commission-free sales of Telegram Stars.", solution: "Integration with TON API to track payments. The bot automatically credits stars right after block confirmation on the network." }
+      }
+    };
+
+    let currentLang = 'ru';
+
+    function applyTranslation() {
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (dict[currentLang][key]) el.innerHTML = dict[currentLang][key];
+      });
+      document.getElementById('lang-toggle').innerText = currentLang === 'ru' ? 'EN' : 'RU';
+      
+      if (document.body.classList.contains('drawer-open')) {
+        const currentProject = document.getElementById('drawer-project-title').getAttribute('data-current-id');
+        if(currentProject) openDrawer(currentProject); 
+      }
+    }
+
+    function toggleLang() {
+      currentLang = currentLang === 'ru' ? 'en' : 'ru';
+      applyTranslation();
+    }
+
+    // --- АРХИТЕКТУРНЫЙ DRAWER ---
+    function openDrawer(projectId) {
+      const data = projectsData[projectId];
+      document.getElementById('drawer-project-title').innerText = data.title;
+      document.getElementById('drawer-project-title').setAttribute('data-current-id', projectId);
+      document.getElementById('drawer-task').innerText = data[currentLang].task;
+      document.getElementById('drawer-solution').innerText = data[currentLang].solution;
+      document.getElementById('drawer-link').href = data.link;
+      
+      const tagsContainer = document.getElementById('drawer-tags');
+      tagsContainer.innerHTML = '';
+      data.tags.split(', ').forEach(tag => {
+        tagsContainer.innerHTML += `<span class="px-3 py-1 bg-[#111] border border-white/10 rounded-full text-[10px] text-white font-bold uppercase">${tag}</span>`;
+      });
+      document.body.classList.add('drawer-open');
+    }
+    function closeDrawer() { document.body.classList.remove('drawer-open'); }
+
+    // УМНАЯ ОТМЕНА МАГНИТНОГО ЭФФЕКТА ДЛЯ СЕНСОРНЫХ ЭКРАНОВ
+    const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (window.matchMedia("(pointer: coarse)").matches);
+
+    if (!isTouchDevice) {
+      // --- 3D TILT EFFECT ДЛЯ КАРТОЧЕК ---
+      document.querySelectorAll('.tilt-card').forEach(card => {
+        card.addEventListener('mousemove', e => {
+          const rect = card.getBoundingClientRect();
+          const x = e.clientX - rect.left;
+          const y = e.clientY - rect.top;
+          const centerX = rect.width / 2;
+          const centerY = rect.height / 2;
+          const rotateX = ((y - centerY) / centerY) * -3; 
+          const rotateY = ((x - centerX) / centerX) * 3;
+          card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.01, 1.01, 1.01)`;
+        });
+        card.addEventListener('mouseleave', () => {
+          card.style.transform = `perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)`;
+        });
+      });
+
+      // --- Магнитные кнопки ---
+      document.querySelectorAll('.magnetic-btn').forEach(btn => {
+        btn.addEventListener('mousemove', (e) => {
+          const rect = btn.getBoundingClientRect();
+          const x = (e.clientX - rect.left) - rect.width / 2;
+          const y = (e.clientY - rect.top) - rect.height / 2;
+          btn.style.transform = `translate(${x * 0.3}px, ${y * 0.3}px)`;
+        });
+        btn.addEventListener('mouseleave', () => {
+          btn.style.transform = 'translate(0px, 0px)';
+        });
+      });
+    }
+
+    // --- Интерактивная статистика ---
+    setInterval(() => {
+      document.getElementById('stat-latency').innerText = Math.floor(Math.random() * 15 + 5) + 'ms';
+      document.getElementById('stat-tasks').innerText = parseInt(document.getElementById('stat-tasks').innerText) + 1;
+    }, 3000);
+
+    // --- Скрытый терминал (Пасхалка 'evil') ---
+    let keystrokes = '';
+    const secretCode = 'evil';
+    const terminal = document.getElementById('easter-terminal');
+    const termInput = document.getElementById('term-input');
+    const termOutput = document.getElementById('term-output');
+
+    document.addEventListener('keydown', (e) => {
+      if (terminal.classList.contains('active')) return;
+      keystrokes += e.key.toLowerCase();
+      if (keystrokes.length > secretCode.length) keystrokes = keystrokes.slice(-secretCode.length);
+      if (keystrokes === secretCode) {
+        terminal.classList.add('active');
+        termInput.focus();
+        keystrokes = '';
+      }
+    });
+
+    function printToTerm(text, type = 'normal') {
+      const div = document.createElement('div');
+      div.innerHTML = text;
+      if (type === 'error') div.style.color = '#ef4444';
+      if (type === 'system') div.style.color = '#a855f7';
+      termOutput.appendChild(div);
+      termOutput.scrollTop = termOutput.scrollHeight;
+    }
+
+    termInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        const cmd = termInput.value.trim().toLowerCase();
+        printToTerm(`> ${cmd}`, 'system');
+        termInput.value = '';
+        switch(cmd) {
+          case 'help': printToTerm('Available commands: help, contact, projects, clear, exit'); break;
+          case 'contact': printToTerm('Telegram: <a href="https://t.me/archenovich" target="_blank" style="text-decoration:underline">@archenovich</a>'); break;
+          case 'projects': printToTerm('Webcartel | EvilStore | EVIL VPN | Donat.cool'); break;
+          case 'clear': termOutput.innerHTML = ''; break;
+          case 'exit': terminal.classList.remove('active'); break;
+          case '': break;
+          default: printToTerm(`Command not found: ${cmd}`, 'error');
+        }
+      }
+    });
+  </script>
+</body>
+</html>
